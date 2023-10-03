@@ -1,9 +1,7 @@
 import * as SUT from "./ls";
 
-// Importing AsyncStorage
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Mocking AsyncStorage
 jest.mock("@react-native-async-storage/async-storage", () => {
   let store: Record<string, string> = {};
   return {
@@ -47,7 +45,9 @@ jest.mock("@react-native-async-storage/async-storage", () => {
 
 describe("localStorage", () => {
   describe("readStorage", () => {
-    it("should return the value of the given the key from the local storage", () => {});
+    it("should return the value of the given key from the local storage", async () => {
+      expect(await SUT.readStorage("feature")).toEqual("value");
+    });
   });
   describe("writeStorage", () => {});
 });
