@@ -90,23 +90,18 @@ export const parseTemplate = (
   return tokens;
 };
 
-const tagComponents = {
-  [TEMPLATE_TAGS.DANGER]: (txt: string) => <Text>{txt}</Text>,
-  [TEMPLATE_TAGS.WARNING]: (txt: string) => `tag-${txt}`,
-  [TEMPLATE_TAGS.SUCCESS]: (txt: string) => `tag-${txt}`,
-  [TEMPLATE_TAGS.BOLD]: (txt: string) => `tag-${txt}`,
-  [TEMPLATE_TAGS.ITALIC]: (txt: string) => `tag-${txt}`,
-};
+// const tagComponents = {
+//   [TEMPLATE_TAGS.DANGER]: (txt: string) => <Text>{txt}</Text>,
+//   [TEMPLATE_TAGS.WARNING]: (txt: string) => `tag-${txt}`,
+//   [TEMPLATE_TAGS.SUCCESS]: (txt: string) => `tag-${txt}`,
+//   [TEMPLATE_TAGS.BOLD]: (txt: string) => `tag-${txt}`,
+//   [TEMPLATE_TAGS.ITALIC]: (txt: string) => `tag-${txt}`,
+// };
 
 type RedTuple = [[string | undefined, string | RedTuple]];
 type Results = { content: RedTuple; position: number };
 export const parseTokens = (tokens: Token[]) => {
-  const reducer = (
-    acc: Results,
-    token: Token,
-    index: number,
-    internalTokens,
-  ) => {
+  const reducer = (acc: Results, token: Token, index: number) => {
     if (token.type === "text") {
       acc.content.push([undefined, token.value]);
       acc.position++;
