@@ -1,3 +1,6 @@
+import React, { PropsWithChildren, ReactNode } from "react";
+import { Text } from "react-native";
+
 export const TEMPLATE_TAGS = {
   DANGER: "dangerStyle",
   WARNING: "warningStyle",
@@ -6,14 +9,19 @@ export const TEMPLATE_TAGS = {
   ITALIC: "italicStyle",
 } as const;
 
-export type TokenType = { type: "text" | "open" | "close"; value: string };
-export type TreeType =
-  | { type: string; content: (string | TreeType)[] }
+export type TemplateTags = (typeof TEMPLATE_TAGS)[keyof typeof TEMPLATE_TAGS];
+
+export type Token =
+  | { type: "text"; value: string }
+  | { type: "open" | "close"; value: TemplateTags };
+
+export type TreeNode =
+  | { type: TemplateTags; content: (string | TreeNode)[] }
   | string;
 
-export function tokenize(str: string): TokenType[] {
+export function tokenize(str: string): Token[] {
   const regex = /\{\/?[a-zA-Z]+}/g;
-  const tokens: TokenType[] = [];
+  const tokens: Token[] = [];
   let lastIndex = 0;
 
   if (!str) {
@@ -45,8 +53,8 @@ export function tokenize(str: string): TokenType[] {
   return tokens;
 }
 
-export function mergeAdjacentTextTokens(tokens: TokenType[]): TokenType[] {
-  const mergedTokens: TokenType[] = [];
+export function mergeAdjacentTextTokens(tokens: Token[]): Token[] {
+  const mergedTokens: Token[] = [];
   let currentText = "";
 
   for (let index = 0; index < tokens.length; index++) {
@@ -81,8 +89,20 @@ export function mergeAdjacentTextTokens(tokens: TokenType[]): TokenType[] {
   return mergedTokens;
 }
 
-export function removeOrphanTokens(tokens: TokenType[]): TokenType[] {
-  const stack: { token: TokenType; index: number }[] = [];
+// export const removeOrphanTokens = (tokens: Token[]): Token[] => {
+//   // want to check - are any odd tags - then remove.
+//
+//   // get the tags, count each tag type, check if any odd. see which to remove.
+//
+//   // want to check - are any mismatched (as in <b><r></b></r>) - not sure what to do with these. Probably remove.
+//
+//   const [filtered, orphans] = tokens.reduce(
+//     (accumulator, token, index, arr) => {},
+//   );
+// };
+
+export function removeOrphanTokens(tokens: Token[]): Token[] {
+  const stack: { token: Token; index: number }[] = [];
   const unmatchedOpens: number[] = [];
   const orphans: number[] = [];
 
@@ -99,7 +119,9 @@ export function removeOrphanTokens(tokens: TokenType[]): TokenType[] {
           console.log("Match found for", token.value, "at index", index);
           foundMatch = true;
           const idx = unmatchedOpens.indexOf(top!.index);
-          if (idx !== -1) unmatchedOpens.splice(idx, 1);
+          if (idx !== -1) {
+            unmatchedOpens.splice(idx, 1);
+          }
           break;
         }
       }
@@ -117,7 +139,7 @@ export function removeOrphanTokens(tokens: TokenType[]): TokenType[] {
   console.log("Unmatched Opens:", unmatchedOpens);
   console.log("Orphans:", orphans);
 
-  const finalTokens: TokenType[] = [];
+  const finalTokens: Token[] = [];
   tokens.forEach((token, index) => {
     // If the token is not an orphan, add it to the final output
     if (!orphans.includes(index)) {
@@ -141,8 +163,8 @@ export function removeOrphanTokens(tokens: TokenType[]): TokenType[] {
   return mergeAdjacentTextTokens(filteredTokens);
 }
 
-export function constructTree(tokens: TokenType[]): [TreeType[], number] {
-  const content: TreeType[] = [];
+export function constructTree(tokens: Token[]): [TreeNode[], number] {
+  const content: TreeNode[] = [];
   let i = 0;
 
   while (i < tokens.length) {
@@ -163,9 +185,31 @@ export function constructTree(tokens: TokenType[]): [TreeType[], number] {
   return [content, i];
 }
 
-export function parse(str: string): TreeType[] {
+export function parseTemplateString(str: string): TreeNode[] {
   const tokens = tokenize(str);
   const validatedTokens = removeOrphanTokens(tokens);
   const [tree] = constructTree(validatedTokens);
   return tree;
 }
+
+const BoldText = ({ children }: PropsWithChildren<{}>) => (
+  <Text style={{ fontWeight: "bold" }}>{children}</Text>
+);
+
+const RedText = ({ children }: PropsWithChildren<{}>) => (
+  <Text style={{ color: "#cc000" }}>{children}</Text>
+);
+
+const tagToTemplateMap: Record<string, (content: ReactNode) => ReactNode> = {
+  boldStyle: (content: ReactNode) => <BoldText>{content}</BoldText>,
+  redStyle: (content: ReactNode) => <RedText>{content}</RedText>,
+};
+
+export const renderTemplate = (tree: TreeNode[]): ReactNode =>
+  tree.map((node) => {
+    if (typeof node === "string") {
+      return node;
+    }
+    const content = renderTemplate(node.content);
+    return tagToTemplateMap[node.type](content);
+  });
