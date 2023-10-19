@@ -15,9 +15,7 @@ export type Token =
   | { type: "text"; value: string }
   | { type: "open" | "close"; value: TemplateTags };
 
-export type TreeNode =
-  | { type: TemplateTags; content: (string | TreeNode)[] }
-  | string;
+export type TreeNode = { type: TemplateTags; content: TreeNode[] } | string;
 
 export function tokenize(str: string): Token[] {
   const regex = /\{\/?[a-zA-Z]+}/g;

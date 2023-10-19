@@ -147,6 +147,16 @@ describe("templating.utils", () => {
       expect(validatedTokens).toContainEqual({ type: "open", value: "b" });
       expect(validatedTokens).toContainEqual({ type: "close", value: "/b" });
     });
+    it("should handle mismatched tokens correctly", () => {
+      const tokens = SUT.tokenize(
+          "start {b}hello {r}world{/b} orphaned{/r} end",
+      );
+      const validatedTokens = SUT.removeOrphanTokens(tokens);
+      expect(validatedTokens).not.toContainEqual({ type: "open", value: "o" });
+      expect(validatedTokens).toContainEqual({ type: "open", value: "b" });
+      expect(validatedTokens).toContainEqual({ type: "close", value: "/b" });
+    });
+
   });
   describe("constructTree", () => {
     it("should handle an empty token list", () => {
